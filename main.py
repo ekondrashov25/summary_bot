@@ -12,7 +12,7 @@ from faster_whisper import WhisperModel
 import config
 from models import Message
 
-model = config.mistral_model
+mistral_model = config.mistral_model
 whisper_model = config.whisper_model
 group_id = config.group_id
 tg_api_key = config.tg_api_key
@@ -32,7 +32,7 @@ logging.basicConfig(format=format, encoding='utf-8',level=logging.INFO)
 
 bot = telebot.TeleBot(tg_api_key)
 client = MistralClient(mistral_api_key)
-model = WhisperModel(whisper_model, device="cuda", compute_type="float16")
+whisper = WhisperModel(whisper_model, device="cpu", compute_type="int8")
 
 context = []
 messages_to_delete = {}
@@ -45,12 +45,11 @@ def restore_messages(message: telebot.types.Message):
     str_dialogue = '\n'.join([f'({mess.timestamp}) {mess.user_name}: {mess.msg_text}' for mess in sorted(context, key=lambda x: x.timestamp)])
     logger.info(f'Restored dialogue: {str_dialogue}')
 
-
     messages = [ChatMessage(role="system", content=inital_prompt), ChatMessage(role='user', content=str_dialogue)]
 
     try:
         summary = client.chat(
-            model=model,
+            model=mistral_model,
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens
@@ -70,16 +69,20 @@ def handle_voice(message):
     file_info = bot.get_file(message.voice.file_id)
     df = bot.download_file(file_info.file_path)
 
-    with open(f'voice/{message.from_user.id}.mp3') as file:
+    with open(f'voice/{message.from_user.id}.mp3', 'wb') as file:
         file.write(df)
         logger.info(f'voice writed to voice/{message.from_user.id}.mp3 ')
     
-    text = model.transcribe(f"voice/{message.from_user.id}.mp3", beam_size=5).text
-    logger.info(f'recognized text: {text}')
-
+    segments, _ = whisper.transcribe(f"voice/{message.from_user.id}.mp3", beam_size=5)
+    recognised_text = ''.join(segment.text for segment in segments)
+    logger.info(f'{type(recognised_text)}')
     message_time = datetime.fromtimestamp(message.date)
-    context.append(Message(timestamp=message_time, user_name=message.from_user.full_name,msg_text=text))
+    context.append(Message(timestamp=message_time, user_name=message.from_user.full_name, msg_text=recognised_text))
+    logger.info('successfully added recognised text to context')
 
+@bot.message_handler(content_types=['video'])
+def handle_video(message):
+    logger.info(f'user send video')
 
 @bot.message_handler(func=lambda message: True)
 def main(message: telebot.types.Message):
