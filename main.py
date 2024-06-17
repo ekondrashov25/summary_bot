@@ -65,24 +65,52 @@ def restore_messages(message: telebot.types.Message):
 
 @bot.message_handler(content_types=['voice'])
 def handle_voice(message):
-    logger.info(f'user send voice')
+    logger.info(f'user send voice message')
     file_info = bot.get_file(message.voice.file_id)
     df = bot.download_file(file_info.file_path)
 
-    with open(f'voice/{message.from_user.id}.mp3', 'wb') as file:
+    with open(f'voice/{message.from_user.id}_{message.message_id}.mp3', 'wb') as file:
         file.write(df)
-        logger.info(f'voice writed to voice/{message.from_user.id}.mp3 ')
-    
-    segments, _ = whisper.transcribe(f"voice/{message.from_user.id}.mp3", beam_size=5)
-    recognised_text = ''.join(segment.text for segment in segments)
-    logger.info(f'{type(recognised_text)}')
+        logger.info(f'voice writed to voice/{message.from_user.id}_{message.message_id}.mp3 ')
+
+    logger.info(f'transcribing file using whisper ({whisper_model=})')
+
+    segments, _ = whisper.transcribe(f"voice/{message.from_user.id}_{message.message_id}.mp3", beam_size=5)
+    recognized_text = ''.join(segment.text for segment in segments)
+
+    logger.info(f'successfully transcribed audio file: {recognized_text[:50]}... (first 50 chars)')
+
     message_time = datetime.fromtimestamp(message.date)
-    context.append(Message(timestamp=message_time, user_name=message.from_user.full_name, msg_text=recognised_text))
+    context.append(Message(timestamp=message_time, user_name=message.from_user.full_name, msg_text=recognized_text))
+
     logger.info('successfully added recognised text to context')
 
-@bot.message_handler(content_types=['video'])
+@bot.message_handler(content_types=['video_note'])
 def handle_video(message):
-    logger.info(f'user send video')
+    logger.info('user send vide_not')
+    file_id = message.video_note.file_id
+
+    file_info = bot.get_file(file_id)
+    file_path = file_info.file_path
+
+    downloaded_file = bot.download_file(file_path)
+
+    logger.info('successfully downloaded file')
+
+    with open(f"voice_notes/{message.from_user.id}_{message.message_id}.mp3", 'wb') as file:
+        file.write(downloaded_file)
+
+    logger.info(f'transcribing video_note using whisper ({whisper_model=})')
+
+    segments, _ = whisper.transcribe(f"voice_notes/{message.from_user.id}_{message.message_id}.mp3", beam_size=5)
+    recognized_text = ''.join(segment.text for segment in segments)
+
+    logger.info(f'successfully transcribed video_not file: {recognized_text[:50]}... (first 50 chars)')
+
+    message_time = datetime.fromtimestamp(message.date)
+    context.append(Message(timestamp=message_time, user_name=message.from_user.full_name, msg_text=recognized_text))
+
+    logger.info('successfully added recognized text to context')
 
 @bot.message_handler(func=lambda message: True)
 def main(message: telebot.types.Message):
