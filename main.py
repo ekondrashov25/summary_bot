@@ -4,15 +4,16 @@ import time
 from datetime import datetime
 
 import telebot
-import schedule
-from schedule import repeat, every
 from mistralai.client import MistralClient
 from mistralai.models.chat_completion import ChatMessage
+from faster_whisper import WhisperModel
+
 
 import config
 from models import Message
 
 model = config.mistral_model
+whisper_model = config.whisper_model
 group_id = config.group_id
 tg_api_key = config.tg_api_key
 mistral_api_key = config.mistral_api_key
@@ -31,6 +32,7 @@ logging.basicConfig(format=format, encoding='utf-8',level=logging.INFO)
 
 bot = telebot.TeleBot(tg_api_key)
 client = MistralClient(mistral_api_key)
+model = WhisperModel(whisper_model, device="cuda", compute_type="float16")
 
 context = []
 messages_to_delete = {}
@@ -56,17 +58,34 @@ def restore_messages(message: telebot.types.Message):
 
         summary = bot.send_message(group_id, summary.choices[0].message.content)
         threading.Thread(target=delete_message, args=(summary.message_id, summary.chat.id)).start()
-        logger.info('code')
+
     except Exception as e:
         logger.error(f'Error generating summary: {e}')
         bot.send_message(group_id, 'Sorry, I encountered an error while generating the summary')
 
+
+@bot.message_handler(content_types=['voice'])
+def handle_voice(message):
+    logger.info(f'user send voice')
+    file_info = bot.get_file(message.voice.file_id)
+    df = bot.download_file(file_info.file_path)
+
+    with open(f'voice/{message.from_user.id}.mp3') as file:
+        file.write(df)
+        logger.info(f'voice writed to voice/{message.from_user.id}.mp3 ')
+    
+    text = model.transcribe(f"voice/{message.from_user.id}.mp3", beam_size=5).text
+    logger.info(f'recognized text: {text}')
+
+    message_time = datetime.fromtimestamp(message.date)
+    context.append(Message(timestamp=message_time, user_name=message.from_user.full_name,msg_text=text))
 
 
 @bot.message_handler(func=lambda message: True)
 def main(message: telebot.types.Message):
     message_time = datetime.fromtimestamp(message.date)
     context.append(Message(timestamp=message_time, user_name=message.from_user.full_name, msg_text=message.text))
+
 
     if len(context) > max_messages:
         context.pop(0)
