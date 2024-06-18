@@ -3,3 +3,4 @@ config.py
 env
 test.py
 voice
+voice_notes
