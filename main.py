@@ -98,7 +98,7 @@ def restore_messages(message: telebot.types.Message):
                 logger.error(f'error while generating audio summary: {e}')
                 bot.send_message(group_id, 'sorry, I encountered an error while generating the audio summary')
         else:
-            logger.info("user don't required an audio summary")
+            logger.info("user don't request an audio summary")
             time.sleep(0.5)
             summary = bot.edit_message_text(summary.choices[0].message.content, restore_message.chat.id, restore_message.message_id)
             logger.info('send summary and starting delete function')
@@ -116,6 +116,7 @@ def handle_voice(message):
     file_info = bot.get_file(message.voice.file_id)
     df = bot.download_file(file_info.file_path)
 
+    logger.info(f'file successfully downloaded')
 
     file_name = f'{voice_path}/{message.from_user.id}_{message.message_id}.mp3'
 
@@ -175,7 +176,7 @@ def main(message: telebot.types.Message):
     
 
 def delete_message(message_id: int, chat_id: int | str) -> None:
-    logger.info(f'called function for delete, waitinig {60 * delete_time}')
+    logger.info(f'called function for delete, waitinig {60 * delete_time} min')
     time.sleep(60 * delete_time)
 
     try:
@@ -185,7 +186,7 @@ def delete_message(message_id: int, chat_id: int | str) -> None:
         logger.error(f"error deleting message: {e}")
 
 
-def create_directories(dirs: list[str], group_id: int):
+def create_directories(dirs: list[str]):
     for dir in dirs:
         if not os.path.exists(dir):
             logger.info(f'there is no correct directory, creating {dir}... ')
@@ -197,10 +198,9 @@ if __name__ == "__main__":
     logger.info('creating directories')
     
     directories = [voice_path, voice_notes_path, voice_summary_path]
-    create_directories(directories, group_id)
+    create_directories(directories)
 
     logger.info('directories successfully created ')
     logger.info('bot started...')
     
     bot.infinity_polling()
-    print('hello')
