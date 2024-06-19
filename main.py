@@ -203,3 +203,4 @@ if __name__ == "__main__":
     logger.info('bot started...')
     
     bot.infinity_polling()
+    print('hello')
