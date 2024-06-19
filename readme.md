@@ -1,6 +1,15 @@
-# Voice Summary Bot
+# Voice Summary Bot (in development)
 
 This bot is designed to summarize group conversations in Telegram. It can transcribe voice and video messages using the Whisper model, and then generate a summary of the conversation using the Mistral AI model. The summary can be provided as text or audio using ElevenLabs text-to-speech service.
+
+## TODO
+- Implement customizable summaries that allow users to set the desired length, level of detail, and tone of the summary.
+- Add a feature that enables users to filter the messages that are included in the summary based on specific criteria, such as the sender, date, or message content.
+- Develop a sentiment analysis tool that can determine the overall sentiment of the group conversation and include it in the summary. 
+- Create a categorization system that can automatically classify messages into predefined categories, such as questions, updates, and announcements, and present them in a structured format.
+- Implement a feature that generates summaries for specific time periods, such as daily, weekly, or monthly summaries.
+- Enhance the summary generation to include the content of attachments, such as documents and images, shared in the chat
+
 
 ## Features
 
@@ -67,3 +76,4 @@ The bot uses the logging module to log events. The logs are printed to the conso
 ## Note
 
 The bot uses the Whisper model for transcription, the Mistral AI model for summary generation, and the ElevenLabs' text-to-speech service for audio summaries. These services may have usage limits and costs associated with them. Please refer to their respective documentation for more information.
+
