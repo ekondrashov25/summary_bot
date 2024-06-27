@@ -13,10 +13,10 @@ This bot is designed to summarize group conversations in Telegram. It can transc
 
 ## Features
 
-- Transcribes voice and video messages using the Whisper model.
-- Generates a summary of the conversation using the Mistral AI model.
-- Can provide the summary as text or audio.
-- Automatically deletes messages after a specified time.
+- Transcribes voice and video messages using the [Whisper model](https://github.com/SYSTRAN/faster-whisper)
+- Generates a summary of the conversation using the [Mistral AI model](https://mistral.ai)
+- Can provide the summary as text or audio using [ElevenLabs](https://elevenlabs.io)
+- Automatically deletes messages after a specified time
 
 The bot uses a custom `Message` model to store and manage messages. The `Message` model has the following attributes:
 
